@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Search Box - GitHub Pages Demo</title>
+  <meta name="description" content="Simple search box that sends whatever the user types to your email via FormSubmit or Formspree" />
+  <style>
+    /* Simple, modern centered search UI (works on GitHub Pages) */
+    :root{--bg1:#a8edea;--bg2:#fed6e3;--card:#ffffff}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,Arial,sans-serif;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--bg1),var(--bg2));padding:32px}
+
+    .card{background:var(--card);width:100%;max-width:720px;border-radius:14px;padding:28px 26px;box-shadow:0 8px 30px rgba(11,22,39,0.12);display:grid;grid-template-columns:1fr;gap:12px}
+
+    .hero{display:flex;align-items:center;gap:18px}
+    .logo{width:64px;height:64px;border-radius:12px;display:inline-block;background:#f3f3f6;display:flex;align-items:center;justify-content:center;font-weight:700;color:#444}
+    .title{font-size:20px;font-weight:700;color:#1b1b1b}
+    .subtitle{color:#444b;font-size:13px}
+
+    .search-wrap{display:flex;gap:8px;align-items:center}
+    form{flex:1;display:flex;gap:8px}
+    input[type="search"]{flex:1;padding:14px 16px;border-radius:10px;border:1px solid rgba(11,22,39,0.08);font-size:16px;outline:none}
+    button[type="submit"]{padding:12px 18px;border-radius:10px;border:none;background:#2563eb;color:white;font-weight:600;cursor:pointer}
+    button[type="submit"]:hover{filter:brightness(.95)}
+
+    .status{font-size:13px;color:#0b0b0b}
+    .small{font-size:13px;color:#3b3b3b}
+
+    .controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    label{font-size:13px;color:#333}
+    select,input[type="checkbox"]{padding:6px;border-radius:6px}
+
+    footer{font-size:13px;color:#333b;margin-top:6px}
+
+    @media (max-width:520px){.hero{flex-direction:column;align-items:flex-start}.logo{width:56px;height:56px}}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="hero">
+      <div class="logo">LOGO</div>
+      <div>
+        <div class="title">Search & Submit (GitHub Pages)</div>
+        <div class="subtitle">Type anything in the box — the text will be sent to you via a form endpoint (FormSubmit or Formspree).</div>
+      </div>
+    </div>
+
+    <!--
+      IMPORTANT: This page is designed to be hosted as a static page (GitHub Pages).
+      Replace the placeholders below with your actual endpoint details before publishing:
+
+      Option A (FormSubmit): set `endpoints.formsubmit` to 'https://formsubmit.co/YOUR_EMAIL@example.com'
+        - First time you submit, FormSubmit sends a confirmation email; you must click the confirmation link.
+        - Pro: no signup required. Con: your email appears in the HTML source (scrapable).
+
+      Option B (Formspree): set `endpoints.formspree` to 'https://formspree.io/f/YOUR_FORM_ID'
+        - Create a free form at https://formspree.io, you'll get a form ID like 'f/abcdxyz'.
+        - Pro: hides your email; better dashboard and anti-spam features.
+
+      The UI below uses JavaScript (AJAX) by default to POST the form without leaving the page.
+      If JavaScript is disabled, the plain <form> fallback will do a normal POST using the currently selected endpoint.
+    -->
+
+    <div class="search-wrap">
+      <!-- The form *action* will be changed by JS based on the dropdown selection. This allows you
+           to host the same index.html and switch endpoints from the UI during testing. -->
+      <form id="searchForm" action="https://formsubmit.co/YOUR_EMAIL@example.com" method="POST">
+
+        <!-- For FormSubmit you can disable captcha and set a redirect (optional): change _next to your hosted thank-you page. -->
+        <input type="hidden" name="_captcha" value="false">
+        <!-- Example _next: https://your-github-username.github.io/thankyou.html -->
+        <input type="hidden" name="_next" value="">
+
+        <!-- The actual data field we'll capture -->
+        <input type="search" id="searchInput" name="query" placeholder="Type here and press Enter or click Send" autocomplete="off" required>
+        <button type="submit">Send</button>
+      </form>
+    </div>
+
+    <div class="controls">
+      <label>
+        <input type="checkbox" id="useAjax" checked> Send with AJAX (no page reload)
+      </label>
+
+      <label>
+        Endpoint:
+        <select id="endpointSelect">
+          <option value="formsubmit">FormSubmit (easy, needs email confirm)</option>
+          <option value="formspree">Formspree (recommended: hides email)</option>
+        </select>
+      </label>
+
+      <label class="small">Status: <span id="statusText" class="status">idle</span></label>
+    </div>
+
+    <div class="small">
+      <strong>Note:</strong> Replace placeholders in the JS below with your real endpoint (email or Formspree ID) before publishing to GitHub.
+    </div>
+
+    <footer>
+      <strong>How it works:</strong> when the user submits, the browser sends a POST request with the form field named `query` (and a timestamp) to the endpoint you configured. That service then forwards the content to your email or saves it in its dashboard.
+    </footer>
+  </main>
+
+  <script>
+    /* ======= CONFIGURE THIS BEFORE PUBLISHING =======
+       Replace the example strings below with your actual endpoints.
+       - FormSubmit: https://formsubmit.co/YOUR_EMAIL@example.com
+       - Formspree:  https://formspree.io/f/YOUR_FORM_ID
+       Do NOT commit your production email if you're worried about scraping; prefer Formspree. */
+    const endpoints = {
+      formsubmit: 'https://formsubmit.co/YOUR_EMAIL@example.com',
+      formspree:  'https://formspree.io/f/YOUR_FORM_ID'
+    };
+
+    // Elements
+    const form = document.getElementById('searchForm');
+    const input = document.getElementById('searchInput');
+    const statusText = document.getElementById('statusText');
+    const useAjax = document.getElementById('useAjax');
+    const endpointSelect = document.getElementById('endpointSelect');
+
+    // Keep the form action in sync with the selected endpoint (for non-JS fallback too)
+    function updateAction() {
+      const e = endpointSelect.value;
+      form.action = endpoints[e];
+    }
+    endpointSelect.addEventListener('change', updateAction);
+    updateAction();
+
+    // Helper to show status
+    function setStatus(msg, ok=true){
+      statusText.textContent = msg;
+      statusText.style.color = ok ? 'green' : 'crimson';
+    }
+
+    // Submission handler: uses fetch + FormData for AJAX when checkbox is checked.
+    form.addEventListener('submit', function(evt){
+      if (!useAjax.checked) return; // allow normal submit
+      evt.preventDefault();
+      setStatus('Sending...');
+
+      // Build form data
+      const data = new FormData(form);
+      // add helpful extras
+      data.append('timestamp', new Date().toISOString());
+      data.append('user_agent', navigator.userAgent);
+
+      // send using fetch to the `action` (endpoint)
+      fetch(form.action, {
+        method: 'POST',
+        body: data,
+        mode: 'cors'
+        /*
+          Notes:
+          - FormSubmit and Formspree accept standard form-encoded POSTs or multipart/form-data.
+          - If you prefer JSON you can build a JSON body and send {'Content-Type':'application/json'}
+            but many static form handlers are easiest to use with FormData.
+        */
+      }).then(async response => {
+        // Some endpoints return 200, others redirect. Check response.ok or response.status
+        if (response.ok || response.status === 200 || response.status === 302) {
+          setStatus('Sent! Check your email / service dashboard.');
+          form.reset();
+        } else {
+          // try to read response text for debugging
+          const text = await response.text().catch(()=>'');
+          setStatus('Error: ' + (response.statusText || text || response.status), false);
+        }
+      }).catch(err => {
+        setStatus('Network error: ' + err.message, false);
+      });
+    });
+
+    // Small nicety: press ESC clears the input
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') input.value = '';
+    });
+  </script>
+</body>
+</html>
