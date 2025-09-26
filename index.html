@@ -52,20 +52,53 @@
     button[type="submit"]:hover {
       filter: brightness(.95);
     }
+    .thankyou {
+      font-size: 20px;
+      font-weight: bold;
+      color: green;
+      display: none; /* hidden by default */
+    }
   </style>
 </head>
 <body>
   <main class="card">
     <h2>Send Your Search</h2>
-    <form action="https://formsubmit.co/shivadarshini4245@gmail.com" method="POST">
-      <!-- Disable CAPTCHA and optionally redirect after submission -->
+
+    <form id="searchForm" action="https://formsubmit.co/shivadarshini4245@gmail.com" method="POST">
+      <!-- Disable CAPTCHA -->
       <input type="hidden" name="_captcha" value="false">
-      <input type="hidden" name="_next" value="https://shivadarshini799.github.io/shivaa/thankyou.html">
+
       <div class="search-wrap">
         <input type="search" name="query" placeholder="Type here and press Send" required>
         <button type="submit">Send</button>
       </div>
     </form>
+
+    <div id="thankyouMsg" class="thankyou">✅ Thank you! Your response has been sent.</div>
   </main>
+
+  <script>
+    const form = document.getElementById("searchForm");
+    const thankyouMsg = document.getElementById("thankyouMsg");
+
+    form.addEventListener("submit", function(event) {
+      event.preventDefault(); // stop normal redirect
+      const formData = new FormData(form);
+
+      fetch(form.action, {
+        method: "POST",
+        body: formData
+      }).then(response => {
+        if (response.ok) {
+          form.style.display = "none";   // hide the form
+          thankyouMsg.style.display = "block"; // show thank you
+        } else {
+          alert("Something went wrong. Try again!");
+        }
+      }).catch(err => {
+        alert("Network error: " + err.message);
+      });
+    });
+  </script>
 </body>
 </html>
